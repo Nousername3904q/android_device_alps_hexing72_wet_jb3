@@ -75,3 +75,13 @@ TW_EXTRA_LANGUAGES := true
 TW_SCREEN_BLANK_ON_BOOT := true
 TW_INPUT_BLACKLIST := "hbtp_vm"
 TW_USE_TOOLBOX := true
+
+# Size trimming — recovery partition is only 6MB, build must fit
+TW_EXCLUDE_APKS := true
+TWRP_INCLUDE_LOGCAT := false
+TARGET_USES_LOGD := false
+TW_EXCLUDE_ENCRYPTED_BACKUPS := true
+TW_EXCLUDE_DEFAULT_USB_INIT := true
+TW_EXTRA_LANGUAGES := false
+BOARD_SUPPRESS_SECURE_ERASE := true
+TWRP_USE_XZ_UTILS := false
