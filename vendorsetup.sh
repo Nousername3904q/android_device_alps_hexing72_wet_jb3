@@ -5,6 +5,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-add_lunch_combo omni_hexing72_wet_jb3-user
-add_lunch_combo omni_hexing72_wet_jb3-userdebug
-add_lunch_combo omni_hexing72_wet_jb3-eng
+add_lunch_combo twrp_hexing72_wet_jb3-user
+add_lunch_combo twrp_hexing72_wet_jb3-userdebug
+add_lunch_combo twrp_hexing72_wet_jb3-eng
