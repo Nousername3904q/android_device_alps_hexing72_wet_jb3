@@ -15,7 +15,7 @@ $(call inherit-product, vendor/omni/config/common.mk)
 $(call inherit-product, device/alps/hexing72_wet_jb3/device.mk)
 
 PRODUCT_DEVICE := hexing72_wet_jb3
-PRODUCT_NAME := omni_hexing72_wet_jb3
+PRODUCT_NAME := twrp_hexing72_wet_jb3
 PRODUCT_BRAND := alps
 PRODUCT_MODEL := T-5JX
 PRODUCT_MANUFACTURER := alps
