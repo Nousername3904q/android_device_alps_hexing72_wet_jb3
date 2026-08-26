@@ -84,7 +84,7 @@ TW_EXCLUDE_ENCRYPTED_BACKUPS := true
 TW_EXCLUDE_DEFAULT_USB_INIT := true
 TW_EXTRA_LANGUAGES := false
 BOARD_SUPPRESS_SECURE_ERASE := true
-TWRP_USE_XZ_UTILS := false
 
-# Compression algorithm for the recovery ramdisk
-LZ4_RAMDISKS := true
+# Ramdisk compression — lzma gives the best ratio (smaller than gzip/lz4),
+# at the cost of slower decompress. Worth it given the hard 6MB ceiling.
+BOARD_RAMDISK_USE_LZMA := true
