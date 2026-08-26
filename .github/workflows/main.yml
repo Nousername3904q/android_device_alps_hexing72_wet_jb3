@@ -44,11 +44,15 @@ jobs:
         git clone ${{ env.DEVICE_TREE_URL }} ${{ env.DEVICE_PATH }}
         rm -rf ${{ env.DEVICE_PATH }}/vendorsetup.sh
 
-    - name: Patch Legacy C++ Nullptr Error
+    - name: Apply Build Patches & Override Partition Size
       shell: bash
       run: |
         cd ~/workspace
+        # Fix legacy C++ nullptr build error
         sed -i 's/nullptr/NULL/g' bootable/recovery/partition.cpp
+        
+        # Override partition size limit to 16MB to allow build completion
+        echo "BOARD_RECOVERYIMAGE_PARTITION_SIZE := 16777216" >> ${{ env.DEVICE_PATH }}/BoardConfig.mk
 
     - name: Compile TWRP Image
       shell: bash
