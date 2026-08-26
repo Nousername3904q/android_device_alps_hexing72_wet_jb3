@@ -49,10 +49,13 @@ jobs:
         repo init --depth=1 -u ${{ env.MANIFEST_URL }} -b ${{ env.MANIFEST_BRANCH }}
         repo sync -c -j$(nproc) --no-tags --no-clone-bundle --force-sync
 
-    - name: Clone Device Tree
+    - name: Clone Device Tree and Nuke Vendorsetup
       run: |
         cd ~/workspace
         git clone ${{ env.DEVICE_TREE_URL }} ${{ env.DEVICE_PATH }}
+        
+        # Completely remove vendorsetup.sh so it cannot crash the build system
+        rm -rf ${{ env.DEVICE_PATH }}/vendorsetup.sh
 
     - name: Setup CCache
       uses: actions/cache@v3
