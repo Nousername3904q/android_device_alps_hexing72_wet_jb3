@@ -2,65 +2,88 @@ name: Compile TWRP Recovery Image
 on:
   workflow_dispatch:
 
+env:
+  MANIFEST_URL: https://github.com/minimal-manifest-twrp/platform_manifest_twrp_omni.git
+  MANIFEST_BRANCH: twrp-4.4-deprecated
+  DEVICE_TREE_URL: https://github.com/Nousername3904q/android_device_alps_hexing72_wet_jb3.git
+  DEVICE_PATH: device/alps/hexing72_wet_jb3
+  DEVICE_CODENAME: hexing72_wet_jb3
+  MAKE_TARGET: recoveryimage
+
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-    - name: Freeing Up Server Disk Space
+    - name: Maximize Build Space
       run: |
-        sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d/* /usr/local/lib/android
+        sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d/* /usr/local/lib/android /opt/ghc
         sudo apt-get clean
+        df -h
 
-    - name: Set Up Building Packages
+    - name: Set Up Building Packages & Legacy Dependencies
       run: |
         sudo apt-get update
-        # Replaced Python 3 with Python 2 to prevent build script crashes
-        sudo apt-get install -y bc bison build-essential curl flex g++-multilib gcc-multilib git gnupg gperf lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python2 cpio
+        # Added openjdk-8-jdk as legacy Android 4.4 host tools occasionally require Java
+        # Added ccache for faster rebuilds
+        sudo apt-get install -y bc bison build-essential ccache cpio curl flex g++-multilib gcc-multilib git gnupg gperf lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python2 openjdk-8-jdk
+        
         # Force python command to use python2
         sudo ln -sf /usr/bin/python2 /usr/bin/python
 
-    - name: Install Legacy Compatibility Libraries
+    - name: Install Legacy Ncurses Libraries
       run: |
         wget -q http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.2-0ubuntu2_amd64.deb
         wget -q http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.2-0ubuntu2_amd64.deb
         sudo dpkg -i libtinfo5_6.2-0ubuntu2_amd64.deb libncurses5_6.2-0ubuntu2_amd64.deb
         rm libtinfo5_6.2-0ubuntu2_amd64.deb libncurses5_6.2-0ubuntu2_amd64.deb
 
-    - name: Fetch and Configure Stable Repo Launcher
+    - name: Install Repo Launcher
       run: |
         mkdir -p ~/bin
         curl -fsSL https://storage.googleapis.com/git-repo-downloads/repo -o ~/bin/repo
-        chmod a+x ~/bin/repo
+        chmod a+rx ~/bin/repo
         sudo cp ~/bin/repo /usr/local/bin/repo
 
     - name: Initialize TWRP Workspace & Sync
       run: |
         mkdir -p ~/workspace && cd ~/workspace
-        git config --global user.email "git@github.com"
+        git config --global user.email "action@github.com"
         git config --global user.name "GitHub Action"
-        /usr/local/bin/repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_omni.git -b twrp-4.4-deprecated
-        /usr/local/bin/repo sync -c -j$(nproc) --no-tags --no-clone-bundle
-        echo "=== DIAGNOSTIC: checked out manifest branch ==="
-        cat ~/workspace/.repo/manifest.xml | grep -i "revision=" | head -5
-        echo "=== DIAGNOSTIC: build/core/build_id.mk (Android version marker) ==="
-        cat ~/workspace/build/core/build_id.mk 2>/dev/null || echo "not found"
+        
+        repo init --depth=1 -u ${{ env.MANIFEST_URL }} -b ${{ env.MANIFEST_BRANCH }}
+        # --force-sync helps prevent failures if the remote history was rewritten
+        repo sync -c -j$(nproc) --no-tags --no-clone-bundle --force-sync
 
-    - name: Clone Local Device Tree
+    - name: Clone Device Tree
       run: |
         cd ~/workspace
-        git clone https://github.com/Nousername3904q/android_device_alps_hexing72_wet_jb3.git device/alps/hexing72_wet_jb3
+        git clone ${{ env.DEVICE_TREE_URL }} ${{ env.DEVICE_PATH }}
+
+    - name: Setup CCache
+      uses: actions/cache@v3
+      with:
+        path: ~/.ccache
+        key: ${{ runner.os }}-twrp-${{ env.DEVICE_CODENAME }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-twrp-${{ env.DEVICE_CODENAME }}-
 
     - name: Compile TWRP Image
       run: |
         cd ~/workspace
         export ALLOW_MISSING_DEPENDENCIES=true
         export LC_ALL=C
-        . build/envsetup.sh
-        lunch omni_hexing72_wet_jb3-eng
-        make recoveryimage -j$(nproc)
+        export USE_CCACHE=1
+        export CCACHE_EXEC=/usr/bin/ccache
+        ccache -M 50G
+        
+        source build/envsetup.sh
+        lunch omni_${{ env.DEVICE_CODENAME }}-eng
+        make ${{ env.MAKE_TARGET }} -j$(nproc)
 
-    - name: Upload Completed TWRP File
+    - name: Upload Completed TWRP Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: TWRP-hexing72_wet_jb3-Recovery
-        path: /home/runner/workspace/out/target/product/hexing72_wet_jb3/*.img
+        name: TWRP-${{ env.DEVICE_CODENAME }}-Recovery
+        # Simplified path to avoid absolute directory mismatch issues
+        path: /home/runner/workspace/out/target/product/${{ env.DEVICE_CODENAME }}/recovery.img
+        if-no-files-found: error
