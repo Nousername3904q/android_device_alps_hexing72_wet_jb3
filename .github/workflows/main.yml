@@ -4,7 +4,7 @@ on:
 
 env:
   MANIFEST_URL: https://github.com/minimal-manifest-twrp/platform_manifest_twrp_omni.git
-  MANIFEST_BRANCH: twrp-4.4-deprecated
+  MANIFEST_BRANCH: twrp-5.1
   DEVICE_TREE_URL: https://github.com/Nousername3904q/android_device_alps_hexing72_wet_jb3.git
   DEVICE_PATH: device/alps/hexing72_wet_jb3
   DEVICE_CODENAME: hexing72_wet_jb3
@@ -23,11 +23,7 @@ jobs:
     - name: Set Up Building Packages & Legacy Dependencies
       run: |
         sudo apt-get update
-        # Added openjdk-8-jdk as legacy Android 4.4 host tools occasionally require Java
-        # Added ccache for faster rebuilds
         sudo apt-get install -y bc bison build-essential ccache cpio curl flex g++-multilib gcc-multilib git gnupg gperf lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python2 openjdk-8-jdk
-        
-        # Force python command to use python2
         sudo ln -sf /usr/bin/python2 /usr/bin/python
 
     - name: Install Legacy Ncurses Libraries
@@ -51,7 +47,6 @@ jobs:
         git config --global user.name "GitHub Action"
         
         repo init --depth=1 -u ${{ env.MANIFEST_URL }} -b ${{ env.MANIFEST_BRANCH }}
-        # --force-sync helps prevent failures if the remote history was rewritten
         repo sync -c -j$(nproc) --no-tags --no-clone-bundle --force-sync
 
     - name: Clone Device Tree
@@ -89,6 +84,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: TWRP-${{ env.DEVICE_CODENAME }}-Recovery
-        # Simplified path to avoid absolute directory mismatch issues
         path: /home/runner/workspace/out/target/product/${{ env.DEVICE_CODENAME }}/recovery.img
         if-no-files-found: error
