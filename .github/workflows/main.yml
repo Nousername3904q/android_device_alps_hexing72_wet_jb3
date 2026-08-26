@@ -76,8 +76,13 @@ jobs:
         export CCACHE_EXEC=/usr/bin/ccache
         ccache -M 50G
         
+        echo "--- SOURCING ENVSETUP ---"
         source build/envsetup.sh
+        
+        echo "--- RUNNING LUNCH ---"
         lunch omni_${{ env.DEVICE_CODENAME }}-eng
+        
+        echo "--- STARTING MAKE ---"
         make ${{ env.MAKE_TARGET }} -j$(nproc)
 
     - name: Upload Completed TWRP Artifact
