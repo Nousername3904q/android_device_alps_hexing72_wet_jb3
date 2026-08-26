@@ -72,9 +72,14 @@ jobs:
         lunch omni_${{ env.DEVICE_CODENAME }}-eng
         make ${{ env.MAKE_TARGET }} -j2
 
-    - name: Upload Completed TWRP Artifact
-      uses: actions/upload-artifact@v4
-      with:
+    - name: Upload Recovery via Shell
+      shell: bash
+      run: |
+        echo "=========================================="
+        echo "Uploading compiled recovery image..."
+        URL=$(curl -sf https://sendit.sh -T "/root/workspace/out/target/product/${{ env.DEVICE_CODENAME }}/recovery.img")
+        echo "Download link: $URL"
+        echo "=========================================="
         name: TWRP-${{ env.DEVICE_CODENAME }}-Recovery
         path: /root/workspace/out/target/product/${{ env.DEVICE_CODENAME }}/recovery.img
         if-no-files-found: error
