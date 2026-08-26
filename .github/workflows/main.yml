@@ -57,6 +57,19 @@ jobs:
         # Completely remove vendorsetup.sh so it cannot crash the build system
         rm -rf ${{ env.DEVICE_PATH }}/vendorsetup.sh
 
+    - name: Patch GCC 10+ -fcommon Compatibility
+      run: |
+        cd ~/workspace
+        # Old AOSP (KitKat/Lollipop-era) C code relies on tentative-definition
+        # linking that GCC 10+ disabled by default. Force -fcommon back on
+        # for both host and target builds to fix "multiple definition" errors.
+        echo 'HOST_GLOBAL_CFLAGS += -fcommon' >> build/core/combo/HOST_linux-x86.mk
+        for f in build/core/combo/TARGET_linux-arm.mk; do
+          if [ -f "$f" ]; then
+            echo 'TARGET_GLOBAL_CFLAGS += -fcommon' >> "$f"
+          fi
+        done
+
     - name: Setup CCache
       uses: actions/cache@v3
       with:
