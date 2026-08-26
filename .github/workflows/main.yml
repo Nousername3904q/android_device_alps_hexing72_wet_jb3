@@ -53,7 +53,15 @@ jobs:
         export ALLOW_MISSING_DEPENDENCIES=true
         export LC_ALL=C
         . build/envsetup.sh
+        set +e
         breakfast hexing72_wet_jb3
+        breakfast_result=$?
+        set -e
+        echo "breakfast exited with: $breakfast_result"
+        if [ $breakfast_result -ne 0 ]; then
+          echo "breakfast failed, aborting"
+          exit 1
+        fi
         make recoveryimage -j$(nproc)
     - name: Upload Completed TWRP File
       uses: actions/upload-artifact@v4
