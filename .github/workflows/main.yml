@@ -29,6 +29,7 @@ jobs:
         chmod a+rx /usr/local/bin/repo
 
     - name: Initialize TWRP Workspace & Sync
+      shell: bash
       run: |
         mkdir -p ~/workspace && cd ~/workspace
         git config --global user.email "action@github.com"
@@ -44,6 +45,7 @@ jobs:
         rm -rf ${{ env.DEVICE_PATH }}/vendorsetup.sh
 
     - name: Compile TWRP Image
+      shell: bash
       run: |
         cd ~/workspace
         export ALLOW_MISSING_DEPENDENCIES=true
