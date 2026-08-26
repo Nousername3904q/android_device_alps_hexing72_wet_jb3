@@ -85,3 +85,6 @@ TW_EXCLUDE_DEFAULT_USB_INIT := true
 TW_EXTRA_LANGUAGES := false
 BOARD_SUPPRESS_SECURE_ERASE := true
 TWRP_USE_XZ_UTILS := false
+
+# Compression algorithm for the recovery ramdisk
+LZ4_RAMDISKS := true
