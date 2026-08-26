@@ -18,11 +18,6 @@ TARGET_CPU_ABI2 := armeabi
 TARGET_CPU_VARIANT := generic
 TARGET_CPU_VARIANT_RUNTIME := generic
 
-TARGET_USES_64_BIT_BINDER := true
-
-# APEX
-OVERRIDE_TARGET_FLATTEN_APEX := true
-
 # Bootloader
 TARGET_BOOTLOADER_BOARD_NAME := hexing72_wet_jb3
 TARGET_NO_BOOTLOADER := true
@@ -61,30 +56,31 @@ TARGET_BOARD_PLATFORM := mt6572
 TARGET_USERIMAGES_USE_EXT4 := true
 TARGET_USERIMAGES_USE_F2FS := true
 
-# Security patch level
-VENDOR_SECURITY_PATCH := 2021-08-01
-
-# Hack: prevent anti rollback
+# Anti-rollback patch overrides
 PLATFORM_SECURITY_PATCH := 2099-12-31
 VENDOR_SECURITY_PATCH := 2099-12-31
 PLATFORM_VERSION := 16.1.0
 
-# TWRP Configuration
-TW_THEME := portrait_hdpi
-TW_EXTRA_LANGUAGES := true
-TW_SCREEN_BLANK_ON_BOOT := true
+# TWRP Configuration (Using MDPI for small screen sizes/ramdisk limits)
+TW_THEME := portrait_mdpi
 TW_INPUT_BLACKLIST := "hbtp_vm"
 TW_USE_TOOLBOX := true
 
-# Size trimming — recovery partition is only 6MB, build must fit
+# Aggressive Size Trimming — Recovery partition limit is 6MB
 TW_EXCLUDE_APKS := true
-TWRP_INCLUDE_LOGCAT := false
-TARGET_USES_LOGD := false
+TW_EXCLUDE_SUPERSU := true
+TW_EXCLUDE_MTP := true
+TW_EXCLUDE_TZDATA := true
 TW_EXCLUDE_ENCRYPTED_BACKUPS := true
 TW_EXCLUDE_DEFAULT_USB_INIT := true
 TW_EXTRA_LANGUAGES := false
+TW_NO_EXFAT := true
+TW_NO_EXFAT_FUSE := true
+TW_INCLUDE_CRYPTO := false
+TWRP_INCLUDE_LOGCAT := false
+TARGET_USES_LOGD := false
 BOARD_SUPPRESS_SECURE_ERASE := true
 
-# Ramdisk compression — lzma gives the best ratio (smaller than gzip/lz4),
-# at the cost of slower decompress. Worth it given the hard 6MB ceiling.
+# Ramdisk compression
 BOARD_RAMDISK_USE_LZMA := true
+LZMA_RAMDISK_TARGETS := recovery
