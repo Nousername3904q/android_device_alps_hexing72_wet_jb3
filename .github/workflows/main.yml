@@ -13,32 +13,20 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    steps:
-    - name: Maximize Build Space
-      run: |
-        sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d/* /usr/local/lib/android /opt/ghc
-        sudo apt-get clean
-        df -h
+    container:
+      image: ubuntu:16.04
 
+    steps:
     - name: Set Up Building Packages & Legacy Dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y bc bison build-essential ccache cpio curl flex g++-multilib gcc-multilib git gnupg gperf lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python2 openjdk-8-jdk
-        sudo ln -sf /usr/bin/python2 /usr/bin/python
-
-    - name: Install Legacy Ncurses Libraries
-      run: |
-        wget -q http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.2-0ubuntu2_amd64.deb
-        wget -q http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.2-0ubuntu2_amd64.deb
-        sudo dpkg -i libtinfo5_6.2-0ubuntu2_amd64.deb libncurses5_6.2-0ubuntu2_amd64.deb
-        rm libtinfo5_6.2-0ubuntu2_amd64.deb libncurses5_6.2-0ubuntu2_amd64.deb
+        apt-get update
+        apt-get install -y bc bison build-essential ccache cpio curl flex g++-multilib gcc-multilib git gnupg gperf lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python openjdk-8-jdk wget
 
     - name: Install Repo Launcher
       run: |
         mkdir -p ~/bin
-        curl -fsSL https://storage.googleapis.com/git-repo-downloads/repo -o ~/bin/repo
-        chmod a+rx ~/bin/repo
-        sudo cp ~/bin/repo /usr/local/bin/repo
+        curl -fsSL https://storage.googleapis.com/git-repo-downloads/repo -o /usr/local/bin/repo
+        chmod a+rx /usr/local/bin/repo
 
     - name: Initialize TWRP Workspace & Sync
       run: |
@@ -47,36 +35,13 @@ jobs:
         git config --global user.name "GitHub Action"
         
         repo init --depth=1 -u ${{ env.MANIFEST_URL }} -b ${{ env.MANIFEST_BRANCH }}
-        repo sync -c -j$(nproc) --no-tags --no-clone-bundle --force-sync
+        repo sync -c -j4 --no-tags --no-clone-bundle --force-sync
 
-    - name: Clone Device Tree and Nuke Vendorsetup
+    - name: Clone Device Tree
       run: |
         cd ~/workspace
         git clone ${{ env.DEVICE_TREE_URL }} ${{ env.DEVICE_PATH }}
-        
-        # Completely remove vendorsetup.sh so it cannot crash the build system
         rm -rf ${{ env.DEVICE_PATH }}/vendorsetup.sh
-
-    - name: Patch GCC 10+ -fcommon Compatibility
-      run: |
-        cd ~/workspace
-        # Old AOSP (KitKat/Lollipop-era) C code relies on tentative-definition
-        # linking that GCC 10+ disabled by default. Force -fcommon back on
-        # for both host and target builds to fix "multiple definition" errors.
-        echo 'HOST_GLOBAL_CFLAGS += -fcommon' >> build/core/combo/HOST_linux-x86.mk
-        for f in build/core/combo/TARGET_linux-arm.mk; do
-          if [ -f "$f" ]; then
-            echo 'TARGET_GLOBAL_CFLAGS += -fcommon' >> "$f"
-          fi
-        done
-
-    - name: Setup CCache
-      uses: actions/cache@v3
-      with:
-        path: ~/.ccache
-        key: ${{ runner.os }}-twrp-${{ env.DEVICE_CODENAME }}-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-twrp-${{ env.DEVICE_CODENAME }}-
 
     - name: Compile TWRP Image
       run: |
@@ -87,22 +52,16 @@ jobs:
         export CCACHE_EXEC=/usr/bin/ccache
         ccache -M 50G
         
-        # Explicitly set Java paths so the build system can find tools.jar
         export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
         export PATH=$JAVA_HOME/bin:$PATH
         
-        echo "--- SOURCING ENVSETUP ---"
         source build/envsetup.sh
-        
-        echo "--- RUNNING LUNCH ---"
         lunch omni_${{ env.DEVICE_CODENAME }}-eng
-        
-        echo "--- STARTING MAKE ---"
-        make ${{ env.MAKE_TARGET }} -j$(nproc)
+        make ${{ env.MAKE_TARGET }} -j2
 
     - name: Upload Completed TWRP Artifact
       uses: actions/upload-artifact@v4
       with:
         name: TWRP-${{ env.DEVICE_CODENAME }}-Recovery
-        path: /home/runner/workspace/out/target/product/${{ env.DEVICE_CODENAME }}/recovery.img
+        path: /root/workspace/out/target/product/${{ env.DEVICE_CODENAME }}/recovery.img
         if-no-files-found: error
