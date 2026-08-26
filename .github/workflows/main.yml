@@ -56,7 +56,7 @@ jobs:
         export ALLOW_MISSING_DEPENDENCIES=true
         export LC_ALL=C
         . build/envsetup.sh
-        lunch twrp_hexing72_wet_jb3-eng
+        lunch omni_hexing72_wet_jb3-eng
         make recoveryimage -j$(nproc)
 
     - name: Upload Completed TWRP File
