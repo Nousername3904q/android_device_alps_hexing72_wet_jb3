@@ -44,6 +44,12 @@ jobs:
         git clone ${{ env.DEVICE_TREE_URL }} ${{ env.DEVICE_PATH }}
         rm -rf ${{ env.DEVICE_PATH }}/vendorsetup.sh
 
+    - name: Patch Legacy C++ Nullptr Error
+      shell: bash
+      run: |
+        cd ~/workspace
+        sed -i 's/nullptr/NULL/g' bootable/recovery/partition.cpp
+
     - name: Compile TWRP Image
       shell: bash
       run: |
